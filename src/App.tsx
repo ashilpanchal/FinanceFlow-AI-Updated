@@ -67,9 +67,7 @@ export default function App() {
     setTimeout(async () => {
       if (enteredCode === '123456' || enteredCode === '000000') {
         try {
-          // For the demo, we can use an anonymous login to give the user a session
-          // OR we can just allow the UI to proceed. 
-          // Since the user wants "Role access", a real session is better.
+          // For the demo, we use Anonymous Login to create a session
           const { signInAnonymously, updateProfile } = await import('firebase/auth');
           const cred = await signInAnonymously(auth);
           await updateProfile(cred.user, { 
@@ -77,9 +75,13 @@ export default function App() {
             photoURL: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=random`
           });
           setAuthStep('welcome');
-        } catch (err) {
+        } catch (err: any) {
           console.error("Auth Error:", err);
-          alert("Login simulation failed. Please try Google Login.");
+          if (err.code === 'auth/operation-not-allowed') {
+            alert("To use OTP simulation, please enable 'Anonymous' authentication in your Firebase Console (Authentication > Sign-in method). \n\nFallback: Use the 'Continue with Google' button instead.");
+          } else {
+            alert("Login simulation failed. Please use Google Login for real database storage.");
+          }
         }
       } else {
         alert("Invalid OTP! Use the developer code: 123456");
@@ -266,6 +268,18 @@ export default function App() {
                 >
                   {isVerifying ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> : "Verify & Login"}
                 </button>
+
+                <div className="pt-2 border-t border-outline-variant/30">
+                  <button 
+                    onClick={signInWithGoogle} 
+                    type="button" 
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold text-on-surface-variant hover:bg-background transition-colors"
+                  >
+                    <img src="https://www.gstatic.com/firebase/anonymous-scan.png" className="w-4 h-4 grayscale opacity-50" alt="" />
+                    Login with Google instead
+                  </button>
+                </div>
+
                 <div className="flex flex-col gap-2">
                   <button onClick={() => setAuthStep('email')} type="button" className="text-[10px] font-bold text-outline uppercase tracking-widest hover:text-on-surface transition-colors">Resend Code</button>
                 </div>
