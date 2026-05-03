@@ -24,14 +24,22 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
     
     setIsUpdating(true);
     try {
-      await updateProfile(user, { displayName, photoURL });
+      await updateProfile(user, { 
+        displayName, 
+        photoURL 
+      });
+      // Force reload to sync auth state
+      await user.reload();
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
         onClose();
-      }, 2000);
+        // Optional: reload page or rely on state sync
+        window.location.reload(); 
+      }, 1500);
     } catch (error) {
       console.error("Profile Update Error:", error);
+      alert("Failed to update profile. Please check your internet connection.");
     } finally {
       setIsUpdating(false);
     }

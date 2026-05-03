@@ -54,31 +54,38 @@ export default function App() {
     setTimeout(() => {
       setIsSending(false);
       setAuthStep('otp');
-    }, 1500);
+      // Show the code in an alert for the user in this dev environment
+      alert(`[SIMULATION] OTP code for ${email} is: 123456`);
+    }, 1200);
   };
 
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
     const enteredCode = otp.join('');
-    if (enteredCode.length < 6) return;
     
     setIsVerifying(true);
-    // Simulation: Any 6 digit code works for the demo flow, or a specific one like 123456
-    setTimeout(() => {
+    setTimeout(async () => {
       if (enteredCode === '123456' || enteredCode === '000000') {
-        // Log in via anonymous for the sake of the demo, or just bypass state
-        // For a real production app, this would use a Firebase Function or similar backend
-        setAuthStep('welcome');
-        setIsVerifying(false);
-        // We simulate the login state here if not using real Firebase Auth for the OTP
-        // In a real scenario, this would call a verify function
-        // For this app, let's just trigger a Google login or anonymous login to satisfy the user object
-        signInWithGoogle(); 
+        try {
+          // For the demo, we can use an anonymous login to give the user a session
+          // OR we can just allow the UI to proceed. 
+          // Since the user wants "Role access", a real session is better.
+          const { signInAnonymously, updateProfile } = await import('firebase/auth');
+          const cred = await signInAnonymously(auth);
+          await updateProfile(cred.user, { 
+            displayName: email.split('@')[0],
+            photoURL: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=random`
+          });
+          setAuthStep('welcome');
+        } catch (err) {
+          console.error("Auth Error:", err);
+          alert("Login simulation failed. Please try Google Login.");
+        }
       } else {
-        alert("Invalid OTP! Try 123456");
-        setIsVerifying(false);
+        alert("Invalid OTP! Use the developer code: 123456");
       }
-    }, 1500);
+      setIsVerifying(false);
+    }, 1000);
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -226,7 +233,19 @@ export default function App() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="space-y-6"
               >
-                <p className="text-xs text-on-surface-variant font-medium">We sent a 6-digit code to <span className="font-bold text-on-surface">{email}</span></p>
+                <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl text-left space-y-2">
+                  <p className="text-xs font-bold text-primary flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    SIMULATOR MODE
+                  </p>
+                  <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                    Real emails aren't sent in this preview. Use the code below to login.
+                  </p>
+                  <div className="bg-white px-3 py-1.5 rounded-lg border border-primary/10 text-center">
+                    <span className="text-lg font-mono font-bold tracking-[0.5em] text-primary">123456</span>
+                  </div>
+                </div>
+
                 <div className="flex justify-between gap-2">
                   {otp.map((digit, i) => (
                     <input 
@@ -249,7 +268,6 @@ export default function App() {
                 </button>
                 <div className="flex flex-col gap-2">
                   <button onClick={() => setAuthStep('email')} type="button" className="text-[10px] font-bold text-outline uppercase tracking-widest hover:text-on-surface transition-colors">Resend Code</button>
-                  <button onClick={() => setAuthStep('welcome')} type="button" className="text-[10px] font-bold text-outline uppercase tracking-widest hover:text-on-surface transition-colors italic opacity-50">Demo Code: 123456</button>
                 </div>
               </motion.form>
             )}
